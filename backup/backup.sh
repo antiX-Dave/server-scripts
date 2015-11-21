@@ -12,6 +12,8 @@ fi
 
 #Log activities
 function log() {
+    if [ ! -d "$LOG_DIR" ]; then mkdir -p $LOG_DIR; fi
+    if [ ! -f "$LOG_FILE" ]; then touch $LOG_FILE; fi
     echo "$1" | tee -a $LOG_FILE;
     echo "$1" >> $VLOG_FILE;
 }
@@ -66,19 +68,19 @@ function drive_check() {
 
 function build_weblog() {
   log 'Building Weblogs';
-  echo '<html><body>' > $HTML_VIEW_DIR/index.html &&
-  echo '<h1>Weblog for Backup</h1>' >> $HTML_VIEW_DIR/index.html &&
-  cat $LOG_FILE | sed -e 's/$/\ <br>/' >> $HTML_VIEW_DIR/index.html &&
-  echo '<hr>' >> $HTML_VIEW_DIR/index.html &&
-  echo "<a href=\"http://$SERVER_ADDRESS/log.html\">View Sync Log" >> $HTML_VIEW_DIR/index.html &&
-  echo '</body></html>' >> $HTML_VIEW_DIR/index.html &&
+  echo '<html><body>' > $LOG_DIR/index.html &&
+  echo '<h1>Weblog for Backup</h1>' >> $LOG_DIR/index.html &&
+  cat $LOG_FILE | sed -e 's/$/\ <br>/' >> $LOG_DIR/index.html &&
+  echo '<hr>' >> $LOG_DIR/index.html &&
+  echo "<a href=\"http://$SERVER_ADDRESS/log.html\">View Sync Log" >> $LOG_DIR/index.html &&
+  echo '</body></html>' >> $LOG_DIR/index.html &&
   log '  + index complete';
-  echo '<html><body>' > $HTML_VIEW_DIR/log.html &&
-  echo '<h1>Weblog for Backup</h1>' >> $HTML_VIEW_DIR/log.html &&
-  cat $SYNC_LOG | sed -e 's/$/\ <br>/' >> $HTML_VIEW_DIR/log.html &&
-  echo '<hr>' >> $HTML_VIEW_DIR/log.html &&
-  echo "<a href=\"http://$SERVER_ADDRESS/index.html\">Backup to Main Log" >> $HTML_VIEW_DIR/log.html &&
-  echo '</body></html>' >> $HTML_VIEW_DIR/log.html &&
+  echo '<html><body>' > $LOG_DIR/log.html &&
+  echo '<h1>Weblog for Backup</h1>' >> $LOG_DIR/log.html &&
+  cat $SYNC_LOG | sed -e 's/$/\ <br>/' >> $LOG_DIR/log.html &&
+  echo '<hr>' >> $LOG_DIR/log.html &&
+  echo "<a href=\"http://$SERVER_ADDRESS/index.html\">Backup to Main Log" >> $LOG_DIR/log.html &&
+  echo '</body></html>' >> $LOG_DIR/log.html &&
   log '  + sync complete';
 }
 
