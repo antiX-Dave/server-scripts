@@ -1,0 +1,68 @@
+# rsync excludes file for antixsnapshot and antixsnapshot-gui
+# version 0.2.7.7 (23.05.2013)
+
+- dev/*
+- cdrom/*
+- media/*
+- swapfile
+- mnt/*
+- sys/*
+- proc/*
+- tmp/*
+- /live
+- boot/grub/menu.lst
+- boot/grub/device.map
+- etc/udev/rules.d/70-persistent-cd.rules
+- etc/udev/rules.d/70-persistent-net.rules
+- etc/fstab
+- etc/mtab
+- home/snapshot
+- root/.bash_history
+- var/log/*.log
+- var/log/*.gz
+- var/log/*.old
+- var/cache/apt/archives/*.deb
+- var/cache/apt/*.bin
+- var/lib/apt/lists/*
+- var/cache/debconf/*-old
+- var/lib/dpkg/*-old
+- lost+found
+- run/acpid.socket
+- run/dbus/system_bus_socket
+- usr/share/doc/*
+
+# Entries below this can be edited by the user. If you have any large
+# files or directories, you should exclude them from being copied
+# by adding them to this list.
+- home/*
+#- home/*/.mozilla/firefox/*/Cache/*
+#- home/*/.mozilla/seamonkey/*/Cache/*
+#- home/*/.adobe
+#- home/*/.macromedia
+#- home/*/.thumbnails/large/*
+#- home/*/.thumbnails/normal/*
+#- home/*/.Trash*
+#- home/*/.local/share/Trash/*
+#- home/*/.cache
+#- home/*/.gvfs
+#- home/*/.bash_history
+#- home/*/.recently-used
+#- home/*/.recently-used.xbel
+#- home/*/.VirtualBox
+#- home/*/VirtualBox VMs
+#- home/*/Desktop/*
+
+# Examples:
+#- home/*/Downloads/*
+#- home/*/Music/*
+#- home/*/Pictures/*
+#- home/*/Videos/*
+
+
+# To exclude all hidden files and directories in your home, uncomment
+# the next line. You will lose custom desktop configs if you do.
+#- home/*/.[a-z,A-Z,0-9]*
+
+# This stops any nvidia drivers from loading - safe option.
+- etc/X11/xorg.conf
+- etc/X11/xorg.conf.d/20-nvidia.conf
