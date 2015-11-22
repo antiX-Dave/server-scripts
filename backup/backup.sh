@@ -88,6 +88,7 @@ function rotate_log() {
   log 'Rotating Log Files';
   mv $LOG_FILE $LOG_FILE.old &&
   mv $SYNC_LOG $SYNC_LOG.old &&
+  mv $VLOG_FILE $VLOG_FILE.old &&
   log '  +  Success';
 }
 
@@ -109,14 +110,14 @@ function make_snapshot() {
     cp -R "$lib_mod_dir"/$kernel_used/"$ata_dir" "$SNAPSHOT_ISO_DIR"/antiX/initrd.gz-image/"$lib_mod_dir"/$kernel_used/;
     ps_initrd.sh "$SNAPSHOT_ISO_DIR"/antiX/initrd.gz close;
     
-    #Copy kernel modules to initrd
+    Copy kernel modules to initrd
     log "Copying kernel modules to initrd";
-    mkdir "$SNAPSHOT_WORK_DIR/initrd" &&
+    if [ ! -d "$SNAPSHOT_WORK_DIR/initrd/" ]; then mkdir "$SNAPSHOT_WORK_DIR/initrd"; fi &&
     cp "$SNAPSHOT_ISO_DIR/antiX/initrd.gz" "$SNAPSHOT_WORK_DIR/initrd/" &&
     cd "$SNAPSHOT_WORK_DIR/initrd/" &&
-    gunzip initrd.gz &&
+    gunzip initrd.gz  &&
     cpio -i <initrd &&
-    copy-initrd-modules --from "$SNAPSHOT_COPY_DIR" -k "$kernel_used" &&
+    copy-initrd-modules --from "$SNAPSHOT_COPY_DIR" -k "$kernel_used" >> $VLOG_FILE 2>&1 a&&
     find . | cpio -o -H newc --owner root:root > initrd &&
     gzip initrd -9 &&
     cp "$SNAPSHOT_WORK_DIR/initrd/initrd.gz" "$SNAPSHOT_ISO_DIR/antiX/" &&
@@ -137,28 +138,33 @@ function make_snapshot() {
     
     #remove old squashed file system and make new
     if [ -f "$SNAPSHOT_ISO_DIR/antiX/linuxfs" ]; then rm "$SNAPSHOT_ISO_DIR"/antiX/linuxfs; fi;
-    mksquashfs $SNAPSHOT_COPY_DIR $SNAPSHOT_ISO_DIR/antiX/linuxfs ${mksq_opt};
+    squashfs $SNAPSHOT_COPY_DIR $SNAPSHOT_ISO_DIR/antiX/linuxfs ${mksq_opt};
     
     #Remove Extra snapshot iso images
     log "Removing Extra Snapshot iso images"
     iso_amount=$(find -maxdepth '1' -path "*.iso" |wc -l)
-    if [ "$iso_amount" >= "$SNAPSHOT_COPIES" ]; then
-        for file in $( stat -c "%X|%n" $SNAPSHOT_ISO_DIR*.iso |sort -r |tail -n '+4')
+    if [ "$iso_amount" > "$SNAPSHOT_COPIES" ]; then
+    filter_number=$(expr "$SNAPSHOT_COPIES" + "1" )
+        for item in $( stat -c "%X|%n" "$SNAPSHOT_WORK_DIR"/*.iso |sort -r |tail -n "+$filter_number" )
         do
+            file=$(echo $item | cut -d "|" -f2)
             log "$file"
             rm $file;
             rm ${file%.*}.md5;
         done
     fi
-    log "  -+  Done"
+    log "  +  Done"
         
     #Clean live usb boot loader if existant 
-    if [ -d "$SNAPSHOT_ISO_DIR/boot/extlinux" ]; then rm -r "$SNAPSHOT_ISO_DIR/boot/extlinux"; fi;
+    if [ -d "$SNAPSHOT_ISO_DIR/boot/extlinux" ]; then 
+        chattr -i "$SNAPSHOT_ISO_DIR/boot/extlinux/ldlinux.sys" > /dev/null &&
+        rm -r "$SNAPSHOT_ISO_DIR/boot/extlinux" ; 
+    fi;
     
     #Generate snapshot iso image and resulting md5 of the file
     genisoimage -l -V antiXlive -R -J -pad -no-emul-boot -boot-load-size 4 -boot-info-table -b "boot/isolinux/isolinux.bin" -c "boot/isolinux/isolinux.cat" -o "$SNAPSHOT_WORK_DIR"/"$filename".iso "$SNAPSHOT_ISO_DIR";
-    isohybrid "$SNAPSHOT_WORK_DIR"/"$filename";
-    md5sum "$SNAPSHOT_WORK_DIR"/$filename > "$SNAPSHOT_WORK_DIR"/"$filename".md5;
+    isohybrid "$SNAPSHOT_WORK_DIR"/"$filename.iso";
+    md5sum "$SNAPSHOT_WORK_DIR"/$filename.iso > "$SNAPSHOT_WORK_DIR"/"$filename".md5;
 }
 
 function home() {
@@ -187,7 +193,7 @@ function home() {
     done
     log "Finishing: $(date)";
     build_weblog; 
-    #mail_log
+    mail_log
     rotate_log;
 }
 
@@ -208,7 +214,7 @@ function full() {
     #Snapshot Prep (Install Live Services)
     log "Installing Live Services for Snapshot";
     #apt-get update && 
-    apt-get --force-yes -y install live-init-antix &&
+    apt-get --force-yes -y install live-init-antix >> $VLOG_FILE 2>&1 &&
     log "  + success";
     
     #Sync Root Dir to Root Backup Dir(s)
@@ -252,10 +258,10 @@ function full() {
             #Install boot loader on drive
             log "Making backup drive live boot";
             log "Installing boot loader";
-            cp -r "$SNAPSHOT_ISO_DIR/boot/syslinux" "$SNAPSHOT_ISO_DIR/boot/extlinux" >> $VLOG_FILE 2>&1 &&
+            cp -r "$SNAPSHOT_ISO_DIR/boot/syslinux/" "$SNAPSHOT_ISO_DIR/boot/extlinux/" >> $VLOG_FILE 2>&1 &&
             mv "$SNAPSHOT_ISO_DIR/boot/extlinux/syslinux.cfg" "$SNAPSHOT_ISO_DIR/boot/extlinux/extlinux.conf" >> $VLOG_FILE 2>&1 &&
             touch "$SNAPSHOT_ISO_DIR/boot/extlinux/gfxsave.on" >> $VLOG_FILE 2>&1 &&
-            echo 1 > "$SNAPSHOT_ISO_DIR/boot/extlinux/gfxsave.on" >> $VLOG_FILE 2>&1 &&
+            $(echo "1" > "$SNAPSHOT_ISO_DIR/boot/extlinux/gfxsave.on") >> $VLOG_FILE 2>&1 &&
             extlinux --install "$SNAPSHOT_ISO_DIR/boot/extlinux" >> $VLOG_FILE 2>&1 &&
             dd bs=440 conv=notrunc count=1 if=/usr/lib/syslinux/mbr.bin of=$devname >> $VLOG_FILE 2>&1 &&
             parted "$devname" set 1 boot on >> $VLOG_FILE 2>&1 &&
