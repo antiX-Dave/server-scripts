@@ -2,7 +2,7 @@
 #Script to make a snapshot / file backup of the system and data
 
 #Set Configuration Location
-config='./backup.conf';
+config='/etc/backup-scripts/backup.conf';
 
 #Check if running as root
 if [ $UID != 0 ]; then
@@ -88,14 +88,13 @@ function rotate_log() {
   log 'Rotating Log Files';
   mv $LOG_FILE $LOG_FILE.old &&
   mv $SYNC_LOG $SYNC_LOG.old &&
-  mv $VLOG_FILE $VLOG_FILE.old &&
-  log '  +  Success';
+  mv $VLOG_FILE $VLOG_FILE.old;
 }
 
 function mail_log() {
   log 'Mailing Log';
   log "Sync Log: http://$SERVER_ADDRESS/log.html" &&
-  cat "$LOG_FILE" |mailx -s "$EMAIL_SUBJECT" $EMAIL_ADDRESS &&
+  cat "$LOG_FILE" |mailx -r "$FROM_EMAIL_ADDRESS" -s "$EMAIL_SUBJECT" $EMAIL_ADDRESS &&
   log '  +  message sent';
 }
 
@@ -110,17 +109,22 @@ function make_snapshot() {
     cp -R "$lib_mod_dir"/$kernel_used/"$ata_dir" "$SNAPSHOT_ISO_DIR"/antiX/initrd.gz-image/"$lib_mod_dir"/$kernel_used/;
     ps_initrd.sh "$SNAPSHOT_ISO_DIR"/antiX/initrd.gz close;
     
-    Copy kernel modules to initrd
+    #Copy kernel modules to initrd
     log "Copying kernel modules to initrd";
     if [ ! -d "$SNAPSHOT_WORK_DIR/initrd/" ]; then mkdir "$SNAPSHOT_WORK_DIR/initrd"; fi &&
     cp "$SNAPSHOT_ISO_DIR/antiX/initrd.gz" "$SNAPSHOT_WORK_DIR/initrd/" &&
+    CWD=$(pwd)
     cd "$SNAPSHOT_WORK_DIR/initrd/" &&
     gunzip initrd.gz  &&
+    ls ./
     cpio -i <initrd &&
-    copy-initrd-modules --from "$SNAPSHOT_COPY_DIR" -k "$kernel_used" >> $VLOG_FILE 2>&1 a&&
+    copy-initrd-modules --from "$SNAPSHOT_COPY_DIR" -k "$kernel_used" &&
     find . | cpio -o -H newc --owner root:root > initrd &&
-    gzip initrd -9 &&
-    cp "$SNAPSHOT_WORK_DIR/initrd/initrd.gz" "$SNAPSHOT_ISO_DIR/antiX/" &&
+    ls ./
+    gzip -f initrd -9 &&
+    mv "$SNAPSHOT_WORK_DIR/initrd/initrd.gz" "$SNAPSHOT_ISO_DIR/antiX/" &&
+    rm -r "$SNAPSHOT_WORK_DIR/initrd/" &&
+    cd "$CWD"
     log "  +  Success";
     
     cp /boot/vmlinuz-$kernel_used "$SNAPSHOT_ISO_DIR"/antiX/vmlinuz;
@@ -138,7 +142,7 @@ function make_snapshot() {
     
     #remove old squashed file system and make new
     if [ -f "$SNAPSHOT_ISO_DIR/antiX/linuxfs" ]; then rm "$SNAPSHOT_ISO_DIR"/antiX/linuxfs; fi;
-    squashfs $SNAPSHOT_COPY_DIR $SNAPSHOT_ISO_DIR/antiX/linuxfs ${mksq_opt};
+    mksquashfs $SNAPSHOT_COPY_DIR $SNAPSHOT_ISO_DIR/antiX/linuxfs ${mksq_opt};
     
     #Remove Extra snapshot iso images
     log "Removing Extra Snapshot iso images"
