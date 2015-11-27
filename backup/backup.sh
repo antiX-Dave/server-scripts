@@ -267,7 +267,9 @@ function full() {
             touch "$SNAPSHOT_ISO_DIR/boot/extlinux/gfxsave.on" >> $VLOG_FILE 2>&1 &&
             $(echo "1" > "$SNAPSHOT_ISO_DIR/boot/extlinux/gfxsave.on") >> $VLOG_FILE 2>&1 &&
             extlinux --install "$SNAPSHOT_ISO_DIR/boot/extlinux" >> $VLOG_FILE 2>&1 &&
-            dd bs=440 conv=notrunc count=1 if=/usr/lib/syslinux/mbr.bin of=$devname >> $VLOG_FILE 2>&1 &&
+            if [ -f "/usr/lib/syslinux/mbr.bin" ]; then inputfile="/usr/lib/syslinux/mbr.bin"; fi
+            if [ -f "/usr/lib/syslinux/mbr/mbr.bin" ]; then inputfile="/usr/lib/syslinux/mbr/mbr.bin"; fi
+            dd bs=440 conv=notrunc count=1 if=$inputfile of=$devname >> $VLOG_FILE 2>&1 &&
             parted "$devname" set 1 boot on >> $VLOG_FILE 2>&1 &&
             log "  +  Success";
         
