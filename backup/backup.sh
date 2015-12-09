@@ -94,7 +94,11 @@ function rotate_log() {
 function mail_log() {
   log 'Mailing Log';
   log "Sync Log: http://$SERVER_ADDRESS/log.html" &&
-  cat "$LOG_FILE" |mailx -r "$FROM_EMAIL_ADDRESS" -s "$EMAIL_SUBJECT" $EMAIL_ADDRESS &&
+  for email in ${EMAIL_ADDRESS[@]}
+  do
+      cat "$LOG_FILE" |mailx -r "$FROM_EMAIL_ADDRESS" -s "$EMAIL_SUBJECT" $email
+  done
+  #cat "$LOG_FILE" |mailx -r "$FROM_EMAIL_ADDRESS" -s "$EMAIL_SUBJECT" $EMAIL_ADDRESS &&
   log '  +  message sent';
 }
 
