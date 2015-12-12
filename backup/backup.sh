@@ -194,7 +194,7 @@ function home() {
         if ! (test_permissions); then log "Mount Location is not Writable" && exit 1; fi
         log "Syncing Home directory to $drive";
         echo "Syncing Home directory to $drive" >> $SYNC_LOG &&
-        rsync -a -v -u -c -H -I -h --progress --delete --partial --numeric-ids -s $HOME_SOURCE $MOUNT_POINT/ >> $SYNC_LOG && 
+        rsync -a -v -u -c -H -E -A -X -h --progress --delete --partial --numeric-ids -s $HOME_SOURCE $MOUNT_POINT/ >> $SYNC_LOG && 
         echo '' >> $SYNC_LOG &&
         log "  + success";
         umount $MOUNT_POINT;
@@ -250,7 +250,7 @@ function full() {
         
             log "Syncing Root directory to $drive";
             echo "Syncing Root directory to $drive" >> $SYNC_LOG &&
-            rsync -a -v -u -c -H -I -h --progress --delete --partial --numeric-ids -s $ROOT_SOURCE $SNAPSHOT_COPY_DIR/ --delete --exclude="$MOUNT_POINT" --exclude="$SNAPSHOT_WORK_DIR" --exclude="$SNAPSHOT_COPY_DIR" --exclude-from="$SNAPSHOT_EXCLUDES" >> $SYNC_LOG && 
+            rsync -a -v -u -c -H -E -A -X -h --progress --delete --partial --numeric-ids -s $ROOT_SOURCE $SNAPSHOT_COPY_DIR/ --exclude-from="$SNAPSHOT_EXCLUDES" >> $SYNC_LOG && 
             echo '' >> $SYNC_LOG &&
             log "  + success";
         
